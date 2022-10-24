@@ -8,6 +8,7 @@
         }
     ],
     "require": {
+        "guzzlehttp/guzzle": "^7.5",
         "nesbot/carbon": "^2.62",
         "sabre/vobject": "^4.5",
         "symfony/console": "^6.1",
