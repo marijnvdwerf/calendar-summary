@@ -1,0 +1,11 @@
+{
+    "name": "marijnvdwerf/calendar-summary",
+    "type": "project",
+    "authors": [
+        {
+            "name": "Marijn van der Werf",
+            "email": "marijn.vanderwerf@gmail.com"
+        }
+    ],
+    "require": {}
+}
