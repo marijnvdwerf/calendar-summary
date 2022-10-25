@@ -9,6 +9,11 @@
             "email": "marijn.vanderwerf@gmail.com"
         }
     ],
+    "autoload": {
+        "psr-4": {
+            "Calendar\\": "src/"
+        }
+    },
     "require": {
         "guzzlehttp/guzzle": "^7.5",
         "nesbot/carbon": "^2.62",

@@ -1,8 +1,8 @@
 #!/usr/bin/env php
 <?php
 
+use Calendar\Entry;
 use Carbon\CarbonImmutable;
-use Sabre\VObject\Component\VEvent;
 use Sabre\VObject\Reader;
 use Symfony\Component\Console\Helper\Table;
 use Symfony\Component\Console\Helper\TableSeparator;
@@ -18,18 +18,24 @@ echo 'Downloading feed...';
 $vcalendar = Reader::read(file_get_contents($_ENV['GCAL_FEED']));
 echo " DONE\n";
 
+/** @var Entry[] $entries */
+$entries = [];
+foreach ($vcalendar->VEVENT as $vevent) {
+    $entries[] = new Calendar\GCal\Entry($vevent);
+}
+
 // TODO: customize week number
 $now = CarbonImmutable::now()->locale('nl');
-echo "Getting events for week {$now->isoWeek}\n";
+echo "Getting entries for week {$now->isoWeek}\n";
 
 $weekStart = $now->startOfWeek();
 $weekEnd = $now->endOfWeek();
 
 $clients = [];
 
-foreach ($vcalendar->VEVENT as $event) {
-    if ($event->isInTimeRange($weekStart, $weekEnd)) {
-        $clients[] = (string)$event->SUMMARY;
+foreach ($entries as $entry) {
+    if ($entry->isInTimeRange($weekStart, $weekEnd)) {
+        $clients[] = $entry->getClient();
     }
 }
 
@@ -46,36 +52,36 @@ foreach ($clients as $client) {
 
         $dayHours = 0;
 
-        $tasks = [];
-
-        /** @var VEvent $event */
-        foreach ($vcalendar->VEVENT as $event) {
-            if ((string)$event->SUMMARY !== $client) {
+        $projects = [];
+        foreach ($entries as $entry) {
+            if ($entry->getClient() !== $client) {
                 continue;
             }
 
-            if (!$event->isInTimeRange($dayStart, $dayEnd)) {
+            if (!$entry->isInTimeRange($dayStart, $dayEnd)) {
                 continue;
             }
 
-            $dtStart = CarbonImmutable::createFromInterface($event->DTSTART->getDateTime());
-            $dtEnd = CarbonImmutable::createFromInterface($event->DTEND->getDateTime());
-            $desc = (string)$event->DESCRIPTION;
-            if (!isset($tasks[$desc])) {
-                $tasks[$desc] = 0;
+            $desc = $entry->getProject();
+            if (!isset($projects[$desc])) {
+                $projects[$desc] = [];
             }
-            $tasks[$desc] += $dtStart->diffInMinutes($dtEnd) / 60;
+            $projects[$desc][] = $entry;
         }
 
-        foreach ($tasks as $task => $hours) {
-            if (empty($task)) {
-                $task = 'null';
+        /**
+         * @var Entry[] $projectEntries
+         */
+        foreach ($projects as $projectEntries) {
+            $id = $projectEntries[0]->getProject();
+            $hours = 0;
+            $logs = [];
+            foreach ($projectEntries as $entry) {
+                $hours += $entry->getDuration();
+                $logs[] = $entry->getSummary();
             }
 
-            $task = preg_split('/\s+/', $task);
-
-            $id = array_shift($task);
-            $log = implode(' ', $task);
+            $log = implode(', ', array_unique($logs));
             echo "  - [{$id}] {$hours}h {$log}\n";
 
             $dayHours += $hours;
