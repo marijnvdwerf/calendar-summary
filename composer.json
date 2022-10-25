@@ -1,6 +1,8 @@
 {
     "name": "marijnvdwerf/calendar-summary",
+    "description": "Generate a weekly overview of your time tracking software",
     "type": "project",
+    "license": "CC-BY-4.0",
     "authors": [
         {
             "name": "Marijn van der Werf",
